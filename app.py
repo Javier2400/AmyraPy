@@ -204,3 +204,5 @@ lbl_resultado = tk.Label(root, textvariable=resultado_var, fg="red", font=("Cons
 lbl_resultado.pack(pady=5)
 
 root.mainloop()
+#pruebaa
+#aaaaaaaaaaaaaa
