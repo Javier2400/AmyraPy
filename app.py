@@ -146,12 +146,12 @@ def generar_tabla():
 
 def graficar():
     try:
-        f_str = entry_funcion.get()
+        f_str = convertir_formula(entry_funcion.get())
         y0 = float(entry_y0_euler.get())
         a = float(entry_a.get())
         b = float(entry_b.get())
         h = float(entry_h.get())
-        y_real_str = entry_y_real.get()
+        y_real_str = convertir_formula(entry_y_real.get())
 
         f = lambda x, y: eval(f_str, {"x": x, "y": y, "np": np})
         y_real = lambda x: eval(y_real_str, {"x": x, "np": np})
