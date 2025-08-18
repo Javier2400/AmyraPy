@@ -2,11 +2,27 @@ import tkinter as tk
 from tkinter import ttk
 import numpy as np
 import matplotlib.pyplot as plt
+import re
+
+#Convertir simbolos
+def convertir_formula(expr: str) -> str:
+    # Reemplazar raíz cuadrada
+    expr = expr.replace("√", "np.sqrt")
+    # Reemplazar potencias con ^
+    expr = re.sub(r"(\w+)\^(\d+)", r"\1**\2", expr)
+    return expr
+
+#posicion del cursor
+def insertar_simbolo(entry, simbolo):
+    pos = entry.index(tk.INSERT)   # posición actual del cursor
+    entry.insert(pos, simbolo)
 
 # Crear ventana principal
 root = tk.Tk()
 root.title("Métodos de Euler y RK4")
-
+scrollbar = ttk.Scrollbar(orient=tk.HORIZONTAL)
+scrollbar.set(0.2,0.5)
+scrollbar.place(x=50, y=50, height=200)
 # Variables globales
 resultado_var = tk.StringVar()
 
@@ -45,19 +61,54 @@ entry_y_real.insert(0, "np.exp(0.1*x) + x**2")  # Ejemplo
 entry_y_real.grid(row=0, column=11)
 
 # Tabla
-tabla = ttk.Treeview(frame_euler_rk4, columns=("n", "xn", "Yn_euler", "Yn_rk4", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"), show="headings")
-for col in tabla["columns"]:
+
+# Frame contenedor de tabla + scroll
+frame_tabla = tk.Frame(frame_euler_rk4)
+frame_tabla.grid(row=2, column=0, columnspan=12, pady=5)
+
+# Scrollbars
+scroll_x = ttk.Scrollbar(frame_tabla, orient="horizontal")
+scroll_y = ttk.Scrollbar(frame_tabla, orient="vertical")
+
+# Tabla
+# Definir columnas con ancho fijo
+tabla = ttk.Treeview(
+    frame_tabla,
+    columns=("n", "xn", "Yn_euler", "Yn_rk4", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"),
+    show="headings",
+    xscrollcommand=scroll_x.set,
+    yscrollcommand=scroll_y.set
+)
+
+# Configurar encabezados y ancho de columnas
+anchos = [50, 70, 100, 100, 100, 120, 100, 100, 80]
+for col, ancho in zip(tabla["columns"], anchos):
     tabla.heading(col, text=col)
-tabla.grid(row=2, column=0, columnspan=12, pady=5)
+    tabla.column(col, width=ancho, anchor="center", stretch=False)  # 👈 stretch=False es clave
+
+
+# Configurar scrollbars
+scroll_x.config(command=tabla.xview)
+scroll_y.config(command=tabla.yview)
+
+# Ubicar elementos
+tabla.grid(row=0, column=0, sticky="nsew")
+scroll_x.grid(row=1, column=0, sticky="ew")
+scroll_y.grid(row=0, column=1, sticky="ns")
+
+# Expandir tabla dentro del frame
+frame_tabla.grid_rowconfigure(0, weight=1)
+frame_tabla.grid_columnconfigure(0, weight=1)
+
 
 def generar_tabla():
     try:
-        f_str = entry_funcion.get()
+        f_str = convertir_formula(entry_funcion.get())
         y0 = float(entry_y0_euler.get())
         a = float(entry_a.get())
         b = float(entry_b.get())
         h = float(entry_h.get())
-        y_real_str = entry_y_real.get()
+        y_real_str = convertir_formula(entry_y_real.get())
 
         f = lambda x, y: eval(f_str, {"x": x, "y": y, "np": np})
         y_real = lambda x: eval(y_real_str, {"x": x, "np": np})
@@ -140,6 +191,13 @@ btn_tabla.grid(row=1, column=0, pady=5)
 
 btn_grafica = tk.Button(frame_euler_rk4, text="Graficar", command=graficar)
 btn_grafica.grid(row=1, column=1, pady=5)
+
+btn_sqrt = tk.Button(frame_euler_rk4, text="√", command=lambda: insertar_simbolo(entry_funcion, "√"))
+btn_sqrt.grid(row=1, column=3)
+
+btn_pot = tk.Button(frame_euler_rk4, text="^", command=lambda: insertar_simbolo(entry_funcion, "^"))
+btn_pot.grid(row=1, column=4)
+
 
 # Mostrar errores si ocurren
 lbl_resultado = tk.Label(root, textvariable=resultado_var, fg="red", font=("Consolas", 10))
