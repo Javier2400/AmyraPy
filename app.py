@@ -10,6 +10,8 @@ import re
 def convertir_formula(expr: str) -> str:
     expr = expr.replace("√", "np.sqrt")
     expr = re.sub(r"(\w+)\^(\d+)", r"\1**\2", expr)
+    expr = re.sub(r"(\d)([a-zA-Z\(])", r"\1*\2", expr)
+    expr = re.sub(r"\)([a-zA-Z0-9\(])", r")*\1", expr)
     return expr
 
 def insertar_simbolo(entry, simbolo):
