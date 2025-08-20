@@ -72,7 +72,7 @@ scroll_y = ttk.Scrollbar(frame_tabla, orient="vertical")
 
 tabla = ttk.Treeview(
     frame_tabla,
-    columns=("n", "xn", "Yn_euler", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"),
+    columns=("n", "xn", "Yn", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"),
     show="headings",
     xscrollcommand=scroll_x.set,
     yscrollcommand=scroll_y.set
