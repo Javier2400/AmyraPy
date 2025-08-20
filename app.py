@@ -4,7 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-#Convertir simbolos
+# ==========================
+# Convertir símbolos (MANTENER)
+# ==========================
 def convertir_formula(expr: str) -> str:
     # Reemplazar raíz cuadrada
     expr = expr.replace("√", "np.sqrt")
@@ -12,27 +14,28 @@ def convertir_formula(expr: str) -> str:
     expr = re.sub(r"(\w+)\^(\d+)", r"\1**\2", expr)
     return expr
 
-#posicion del cursor
+# posición del cursor 
 def insertar_simbolo(entry, simbolo):
     pos = entry.index(tk.INSERT)   # posición actual del cursor
     entry.insert(pos, simbolo)
 
-# Crear ventana principal
+# Crear ventana principal 
 root = tk.Tk()
 root.title("Métodos de Euler y RK4")
 scrollbar = ttk.Scrollbar(orient=tk.HORIZONTAL)
 scrollbar.set(0.2,0.5)
 scrollbar.place(x=50, y=50, height=200)
-# Variables globales
+
+# Variables globales 
 resultado_var = tk.StringVar()
 
-# ===== BLOQUE METODO EULER Y RK4 =====
+# ===== BLOQUE METODO EULER  =====
 frame_euler_rk4 = tk.LabelFrame(root, text="Método de Euler y RK4")
 frame_euler_rk4.pack(padx=10, pady=5, fill="x")
 
 tk.Label(frame_euler_rk4, text="Ecuación f(x,y)=").grid(row=0, column=0)
 entry_funcion = tk.Entry(frame_euler_rk4, width=25)
-entry_funcion.insert(0, "0.1*np.sqrt(y) + 0.4*x**2")  # Ejemplo
+entry_funcion.insert(0, "0.1*√(y) + 0.4*x^2")  # Ejemplo
 entry_funcion.grid(row=0, column=1)
 
 tk.Label(frame_euler_rk4, text="Y0=").grid(row=0, column=2)
@@ -57,50 +60,45 @@ entry_h.grid(row=0, column=9)
 
 tk.Label(frame_euler_rk4, text="Y real=").grid(row=0, column=10)
 entry_y_real = tk.Entry(frame_euler_rk4, width=25)
-entry_y_real.insert(0, "np.exp(0.1*x) + x**2")  # Ejemplo
+entry_y_real.insert(0, "√(0.1*x) + x^2")  # Ejemplo
 entry_y_real.grid(row=0, column=11)
 
-# Tabla
-
-# Frame contenedor de tabla + scroll
+# ===== Tabla + scroll  =====
 frame_tabla = tk.Frame(frame_euler_rk4)
 frame_tabla.grid(row=2, column=0, columnspan=12, pady=5)
 
-# Scrollbars
 scroll_x = ttk.Scrollbar(frame_tabla, orient="horizontal")
 scroll_y = ttk.Scrollbar(frame_tabla, orient="vertical")
 
-# Tabla
-# Definir columnas con ancho fijo
 tabla = ttk.Treeview(
     frame_tabla,
-    columns=("n", "xn", "Yn_euler", "Yn_rk4", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"),
+    columns=("n", "xn", "Yn_euler", "f", "Y_real", "Error_abs", "Error_rel", "Error_%"),
     show="headings",
     xscrollcommand=scroll_x.set,
     yscrollcommand=scroll_y.set
 )
 
-# Configurar encabezados y ancho de columnas
+tabla.heading("Error_%", text="Error %")
+
+
 anchos = [50, 70, 100, 100, 100, 120, 100, 100, 80]
 for col, ancho in zip(tabla["columns"], anchos):
     tabla.heading(col, text=col)
-    tabla.column(col, width=ancho, anchor="center", stretch=False)  # 👈 stretch=False es clave
+    tabla.column(col, width=ancho, anchor="center", stretch=False)
 
-
-# Configurar scrollbars
 scroll_x.config(command=tabla.xview)
 scroll_y.config(command=tabla.yview)
 
-# Ubicar elementos
 tabla.grid(row=0, column=0, sticky="nsew")
 scroll_x.grid(row=1, column=0, sticky="ew")
 scroll_y.grid(row=0, column=1, sticky="ns")
 
-# Expandir tabla dentro del frame
 frame_tabla.grid_rowconfigure(0, weight=1)
 frame_tabla.grid_columnconfigure(0, weight=1)
 
-
+# ==========================
+# GENERAR TABLA 
+# ==========================
 def generar_tabla():
     try:
         f_str = convertir_formula(entry_funcion.get())
@@ -110,40 +108,78 @@ def generar_tabla():
         h = float(entry_h.get())
         y_real_str = convertir_formula(entry_y_real.get())
 
+        # f(x,y) y Y_real(x) evaluables
         f = lambda x, y: eval(f_str, {"x": x, "y": y, "np": np})
         y_real = lambda x: eval(y_real_str, {"x": x, "np": np})
 
+        # Nodos
         n_pasos = int((b - a) / h)
         x_vals = [a + i*h for i in range(n_pasos+1)]
 
-        # Método de Euler
+        # ======= MÉTODO DE EULER (FÓRMULA CORRECTA) =======
+        # Yn = Yn-1 + h * f(xn-1, Yn-1)
         y_euler = [y0]
         for i in range(n_pasos):
             y_euler.append(y_euler[-1] + h * f(x_vals[i], y_euler[-1]))
 
-        # Método RK4
+        # ======= RK4 DE REFERENCIA =======
         y_rk4 = [y0]
         for i in range(n_pasos):
-            k1 = f(x_vals[i], y_rk4[-1])
-            k2 = f(x_vals[i] + h/2, y_rk4[-1] + h*k1/2)
-            k3 = f(x_vals[i] + h/2, y_rk4[-1] + h*k2/2)
-            k4 = f(x_vals[i] + h, y_rk4[-1] + h*k3)
-            y_rk4.append(y_rk4[-1] + (h/6)*(k1 + 2*k2 + 2*k3 + k4))
+            k1 = f(x_vals[i],           y_rk4[-1])
+            k2 = f(x_vals[i] + h/2.0,   y_rk4[-1] + h*k1/2.0)
+            k3 = f(x_vals[i] + h/2.0,   y_rk4[-1] + h*k2/2.0)
+            k4 = f(x_vals[i] + h,       y_rk4[-1] + h*k3)
+            y_rk4.append(y_rk4[-1] + (h/6.0)*(k1 + 2*k2 + 2*k3 + k4))
 
-        # Mostrar en tabla
+        # Limpiar tabla antes de cargar 
         for item in tabla.get_children():
             tabla.delete(item)
+
+        # ======= FILAS DE LA TABLA  =======
         for i in range(n_pasos+1):
-            y_r = y_real(x_vals[i])
-            err_abs = abs(y_r - y_euler[i])
-            err_rel = err_abs / abs(y_r) if y_r != 0 else 0
-            err_pct = err_rel * 100
-            tabla.insert("", "end", values=(i, round(x_vals[i],4), round(y_euler[i],4), round(y_rk4[i],4),
-                                            round(f(x_vals[i], y_euler[i]),4), round(y_r,4),
-                                            round(err_abs,4), round(err_rel,6), round(err_pct,3)))
+            # ---- FÓRMULAS DE TABLA (deja estos comentarios para futuras ediciones) ----
+            # Δx = h
+            # n = 0..N
+            # xn = a + n*h
+            xn = x_vals[i]
+            Yn = y_euler[i]
+            # f = f(xn-1, Yn-1) (vacío en n=0)
+            if i == 0:
+                f_col = ""
+            else:
+                f_col = f(x_vals[i-1], y_euler[i-1])
+
+            # Y real = función ingresada por el usuario en "Y real"
+            Y_real_val = y_real(xn)
+
+            # Errores contra Euler:
+            # Error absoluto   = |Y_real - Yn|
+            # Error relativo   = |Y_real - Yn| / |Y_real| (si Y_real != 0, si no 0)
+            # Error porcentual = 100 * Error relativo
+            err_abs = abs(Y_real_val - Yn)
+            err_rel = (err_abs / abs(Y_real_val)) if Y_real_val != 0 else 0.0
+            err_pct = err_rel * 100.0
+            # ---------------------------------------------------------------------------
+
+            tabla.insert(
+                    "", "end",
+                    values=(
+                        i,
+                        round(xn, 4),                 # xn
+                        round(Yn, 4),                 # Yn_euler
+                        ("" if i == 0 else round(f_col, 4)),  # f(x,y)
+                        round(Y_real_val, 4),         # Y_real
+                        round(err_abs, 4),            # Error_abs
+                        round(err_rel, 6),            # Error_rel
+                        round(err_pct, 3)             # Error_%
+                            )
+                        )
+
+
     except Exception as e:
         resultado_var.set(f"Error en tabla: {e}")
 
+# ===== GRAFICAR =====
 def graficar():
     try:
         f_str = convertir_formula(entry_funcion.get())
@@ -163,7 +199,6 @@ def graficar():
         y_rk4 = [y0]
         for i in range(n_pasos):
             y_euler.append(y_euler[-1] + h * f(x_vals[i], y_euler[-1]))
-
             k1 = f(x_vals[i], y_rk4[-1])
             k2 = f(x_vals[i] + h/2, y_rk4[-1] + h*k1/2)
             k3 = f(x_vals[i] + h/2, y_rk4[-1] + h*k2/2)
@@ -186,6 +221,7 @@ def graficar():
     except Exception as e:
         resultado_var.set(f"Error en gráfica: {e}")
 
+# ===== Botones =====
 btn_tabla = tk.Button(frame_euler_rk4, text="Generar Tabla", command=generar_tabla)
 btn_tabla.grid(row=1, column=0, pady=5)
 
@@ -198,11 +234,8 @@ btn_sqrt.grid(row=1, column=3)
 btn_pot = tk.Button(frame_euler_rk4, text="^", command=lambda: insertar_simbolo(entry_funcion, "^"))
 btn_pot.grid(row=1, column=4)
 
-
-# Mostrar errores si ocurren
+# Mostrar errores si ocurren 
 lbl_resultado = tk.Label(root, textvariable=resultado_var, fg="red", font=("Consolas", 10))
 lbl_resultado.pack(pady=5)
 
 root.mainloop()
-#pruebaa
-#aaaaaaaaaaaaaa
